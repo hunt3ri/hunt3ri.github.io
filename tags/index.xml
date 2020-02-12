@@ -29,5 +29,23 @@
       <description></description>
     </item>
     
+    <item>
+      <title>postgres</title>
+      <link>https://hunt3ri.github.io/tags/postgres/</link>
+      <pubDate>Tue, 27 Jun 2017 21:11:58 +0000</pubDate>
+      
+      <guid>https://hunt3ri.github.io/tags/postgres/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>python</title>
+      <link>https://hunt3ri.github.io/tags/python/</link>
+      <pubDate>Tue, 27 Jun 2017 21:11:58 +0000</pubDate>
+      
+      <guid>https://hunt3ri.github.io/tags/python/</guid>
+      <description></description>
+    </item>
+    
   </channel>
 </rss>

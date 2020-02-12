@@ -20,5 +20,14 @@
       <description>I saw this tweet recently and it sparked a few thoughts as it neatly gets to the heart of the biggest challenge in software – getting to done.</description>
     </item>
     
+    <item>
+      <title>Address Search OS OpenNames with PostGIS, SQLAlchemy and Python – PART 1</title>
+      <link>https://hunt3ri.github.io/2017/06/address-search-os-opennames-with-postgis-sqlalchemy-and-python-part-1/</link>
+      <pubDate>Tue, 27 Jun 2017 21:11:58 +0000</pubDate>
+      
+      <guid>https://hunt3ri.github.io/2017/06/address-search-os-opennames-with-postgis-sqlalchemy-and-python-part-1/</guid>
+      <description>In this two part post we’ll look at implementing an address search using the Ordnance Survey Open Names dataset.  We’ll use the power of Postgres with the PostGIS extension leveraging it’s built in Full Text Search, and use Python and the SQLAlchemy ORM to create a simple CLI.</description>
+    </item>
+    
   </channel>
 </rss>
