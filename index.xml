@@ -21,6 +21,15 @@
     </item>
     
     <item>
+      <title>Address Search OS OpenNames with PostGIS, SQLAlchemy and Python – PART 2</title>
+      <link>https://hunt3ri.github.io/2017/06/address-search-os-opennames-with-postgis-sqlalchemy-and-python-part-2/</link>
+      <pubDate>Tue, 27 Jun 2017 22:11:58 +0000</pubDate>
+      
+      <guid>https://hunt3ri.github.io/2017/06/address-search-os-opennames-with-postgis-sqlalchemy-and-python-part-2/</guid>
+      <description>In Part 2 we look at writing a simple Python 3 CLI app that will show you how easy it is to integrate this powerful functionality into your apps and APIs.  Other than Python the only dependency we need is the  SQLAlchemy ORM to let our app communicate with Postgres.</description>
+    </item>
+    
+    <item>
       <title>Address Search OS OpenNames with PostGIS, SQLAlchemy and Python – PART 1</title>
       <link>https://hunt3ri.github.io/2017/06/address-search-os-opennames-with-postgis-sqlalchemy-and-python-part-1/</link>
       <pubDate>Tue, 27 Jun 2017 21:11:58 +0000</pubDate>
