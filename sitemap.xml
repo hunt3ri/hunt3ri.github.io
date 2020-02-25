@@ -52,4 +52,19 @@
     <lastmod>2017-06-27T21:11:58+00:00</lastmod>
   </url>
   
+  <url>
+    <loc>https://hunt3ri.github.io/tags/aws/</loc>
+    <lastmod>2017-05-23T22:11:58+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://hunt3ri.github.io/tags/aws-rds/</loc>
+    <lastmod>2017-05-23T22:11:58+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://hunt3ri.github.io/2017/05/restoring-a-postgres-database-to-aws-rds-using-docker/</loc>
+    <lastmod>2017-05-23T22:11:58+00:00</lastmod>
+  </url>
+  
 </urlset>
