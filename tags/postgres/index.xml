@@ -29,5 +29,14 @@
       <description>In this two part post we’ll look at implementing an address search using the Ordnance Survey Open Names dataset.  We’ll use the power of Postgres with the PostGIS extension leveraging it’s built in Full Text Search, and use Python and the SQLAlchemy ORM to create a simple CLI.</description>
     </item>
     
+    <item>
+      <title>Restoring a Postgres database to AWS RDS using Docker</title>
+      <link>https://hunt3ri.github.io/2017/05/restoring-a-postgres-database-to-aws-rds-using-docker/</link>
+      <pubDate>Tue, 23 May 2017 22:11:58 +0000</pubDate>
+      
+      <guid>https://hunt3ri.github.io/2017/05/restoring-a-postgres-database-to-aws-rds-using-docker/</guid>
+      <description>In this post I look at using Docker to restore a Postgres dump file to a Postgres database running in the cloud on AWS RDS.</description>
+    </item>
+    
   </channel>
 </rss>
