@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <title>hunt3ri.github.io - Address Search OS OpenNames with PostGIS, SQLAlchemy and Python – PART 2</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="generator" content="Pelican" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+        <link href="/theme/css/main.css" rel="stylesheet">
+        <link href="/theme/css/pygment.css" rel="stylesheet">
+        <link href="https://hunt3ri.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Full Atom Feed" />
+        <link href="https://hunt3ri.github.io/feeds/programming.atom.xml" type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Categories Atom Feed" />
+
+
+
+
+
+</head>
+
+<body id="index" class="home">
+        <div class="container">
+        <header id="banner" class="body" style="background-image: url('/images/stirling.png')">
+                <h1 id="site-title-header"><a id="site-title" href="https://hunt3ri.github.io/">hunt3ri.github.io</a></h1>
+                <h3></h3>
+        </header><!-- /#banner -->
+                <!-- TODO -->
+                <p class="socials text-end">
+                        <a class="nav-item" href="https://stackoverflow.com/story/iain-hunter" target="_blank"><i class="fab fa-stack-overflow"></i></a>
+                        <a class="nav-item" href="https://github.com/hunt3ri" target="_blank"><i class="fab fa-github"></i></a>
+                        <a class="nav-item" href="https://www.linkedin.com/in/hunteriain/" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                        <a class="nav-item" href="https://twitter.com/hunt3ri" target="_blank"><i class="fab fa-twitter"></i></a>
+                </p>
+        <nav id="menu"><ul>
+        </ul></nav><!-- /#menu -->
+
+<section id="content" class="body">
+    <header>
+        <h2 class="entry-title">
+            <a class="article-title" href="https://hunt3ri.github.io/address-search-os-opennames-with-postgis-sqlalchemy-and-python-part-2.html" rel="bookmark"
+               title="Permalink to Address Search OS OpenNames with PostGIS, SQLAlchemy and Python – PART 2">Address Search OS OpenNames with PostGIS, SQLAlchemy and Python – PART 2</a></h2>
+        
+    </header>
+    <footer class="post-info">
+        <time class="published" datetime="2017-06-27T22:20:00+01:00">
+            Tue 27 June 2017
+        </time>
+        <div>
+            Category: <a href="https://hunt3ri.github.io/category/programming.html">Programming</a>
+        </div>
+        <address class="vcard author">
+            By             <a class="url fn" href="https://hunt3ri.github.io/author/iain-hunter.html">Iain Hunter</a>
+        </address>
+
+    </footer><!-- /.post-info -->
+    <div class="entry-content">
+        <p>Part 1 of this post outlined how to configure a PostGIS database to allow us to run Full Text searches against the OS OpenNames dataset.</p>
+<p>In Part 2 we look at writing a simple Python 3 CLI app that will show you how easy it is to integrate this powerful functionality into your apps and APIs.  Other than Python the only dependency we need is the <a href="https://www.sqlalchemy.org/">SQLAlchemy ORM</a> to let our app communicate with Postgres.</p>
+<p><img alt="Address Search" src="https://hunt3ri.github.io/images/address-search.jpg#centre"></p>
+<h2>Installing SQLAlchemy</h2>
+<p>SQLAlchemy can be installed using pip.  It is dependent on psycopg2, which you may struggle to install on Mac without Postgres present, which is frustrating (however solutions can be found on Stack Overflow)</p>
+<h2>A simple address search CLI</h2>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37</pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>  <span class="kn">import</span> <span class="nn">argparse</span>
+  <span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span><span class="p">,</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">String</span>
+  <span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="kn">import</span> <span class="n">declarative_base</span>
+  <span class="kn">from</span> <span class="nn">sqlalchemy.dialects.postgresql</span> <span class="kn">import</span> <span class="n">TSVECTOR</span>
+  <span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">sessionmaker</span>
+
+  <span class="c1"># Create DB Session</span>
+  <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="s1">&#39;postgresql://iain:password@localhost:5432/Real-World&#39;</span><span class="p">)</span>
+  <span class="n">Session</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
+  <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
+
+  <span class="n">Base</span> <span class="o">=</span> <span class="n">declarative_base</span><span class="p">()</span>
+
+  <span class="k">class</span> <span class="nc">OpenNames</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+      <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;open_names&#39;</span>
+
+      <span class="c1"># Map DB columns we&#39;re interested in </span>
+      <span class="n">ogc_fid</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+      <span class="n">text</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">)</span>
+      <span class="n">textsearchable</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">TSVECTOR</span><span class="p">)</span>
+
+      <span class="k">def</span> <span class="nf">search_address</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">search_for</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+          <span class="nb">print</span><span class="p">(</span><span class="n">search_for</span><span class="p">)</span>
+
+          <span class="n">or_search</span> <span class="o">=</span> <span class="n">search_for</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39; | &#39;</span><span class="p">)</span>  <span class="c1"># Append OR operator to every word searched</span>
+          <span class="n">results</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">OpenNames</span><span class="o">.</span><span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">OpenNames</span><span class="o">.</span><span class="n">textsearchable</span><span class="o">.</span><span class="n">match</span> <span class="p">(</span><span class="n">or_search</span><span class="p">,</span> <span class="n">postgresql_reconfig</span><span class="o">=</span><span class="s1">&#39;english&#39;</span><span class="p">))</span>
+
+          <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+              <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+  <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+      <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+      <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;address&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Address you want to search for&#39;</span><span class="p">)</span>
+      <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+      <span class="n">open_names</span> <span class="o">=</span> <span class="n">OpenNames</span><span class="p">()</span>
+      <span class="n">open_names</span><span class="o">.</span><span class="n">search_address</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+
+<h2>Let me draw your attention to…</h2>
+<p>Hopefully this script is fairly easy to follow, but there are a couple of lines to draw your attention to</p>
+<ul>
+<li><strong>Line 4</strong> – Note we have to tell SQLAlchemy we’re using the Postgres dialect so it understands TSVECTOR</li>
+<li><strong>Lines 8</strong> – 12 is simply SQLAlchemy boiler plate that sets up our connection and session for the app.  You’ll need to swap out the connection details for your own</li>
+<li><strong>Lines 17-20</strong> I’ve chosen to map only 3 columns, you’ll probably want to map more.</li>
+<li><strong>Line 25</strong> – is very important, here we append the OR operator to every word the user has supplied, meaning we’re returning addresses.  You could extend this to allow the user to specify on exact match operator and change this to an &amp; search.</li>
+<li><strong>Line 26</strong> – Finally note we ask SQLAlchemy to match our search, and importantly we must supply the <strong>postgresql_reconfig</strong> param to say we’re searching in English.  This is vital or you wont get the matches you expect.</li>
+</ul>
+<h2>Running our app</h2>
+<p>We can run our app from the command line simply by entering the following command</p>
+<div class="highlight"><pre><span></span><code><span class="n">python</span> <span class="n">address_search</span><span class="o">.</span><span class="n">py</span> <span class="s1">&#39;forth street&#39;</span>
+</code></pre></div>
+
+
+<h2>Ends</h2>
+<p>Hopefully you can see how easy it would be take the above code and integrate it into your apps and APIs.  I hope you’ve found these tutorials useful.  Happy text searching.</p>
+    </div><!-- /.entry-content -->
+</section>
+        <footer id="contentinfo" class="body">
+                <hr id="footer-line">
+                <address id="about" class="vcard body">
+                        &copy; 2021 Iain Hunter.
+                Proudly powered by <a href="https://getpelican.com/">Pelican</a>,
+                which takes great advantage of <a href="https://www.python.org/">Python 3.9</a>.
+
+                        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img id="license-img" alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a>
+
+                </address><!-- /#about -->
+        </footer><!-- /#contentinfo -->
+                <script src="https://kit.fontawesome.com/afb8de03da.js" crossorigin="anonymous"></script>
+        </div>
+</body>
+</html>

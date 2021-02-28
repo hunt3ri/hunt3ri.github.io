@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <title>hunt3ri.github.io - Running Mongo 3.2 in Docker on OSX</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="generator" content="Pelican" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+        <link href="/theme/css/main.css" rel="stylesheet">
+        <link href="/theme/css/pygment.css" rel="stylesheet">
+        <link href="https://hunt3ri.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Full Atom Feed" />
+        <link href="https://hunt3ri.github.io/feeds/software-development.atom.xml" type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Categories Atom Feed" />
+
+
+
+
+
+</head>
+
+<body id="index" class="home">
+        <div class="container">
+        <header id="banner" class="body" style="background-image: url('/images/stirling.png')">
+                <h1 id="site-title-header"><a id="site-title" href="https://hunt3ri.github.io/">hunt3ri.github.io</a></h1>
+                <h3></h3>
+        </header><!-- /#banner -->
+                <!-- TODO -->
+                <p class="socials text-end">
+                        <a class="nav-item" href="https://stackoverflow.com/story/iain-hunter" target="_blank"><i class="fab fa-stack-overflow"></i></a>
+                        <a class="nav-item" href="https://github.com/hunt3ri" target="_blank"><i class="fab fa-github"></i></a>
+                        <a class="nav-item" href="https://www.linkedin.com/in/hunteriain/" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                        <a class="nav-item" href="https://twitter.com/hunt3ri" target="_blank"><i class="fab fa-twitter"></i></a>
+                </p>
+        <nav id="menu"><ul>
+        </ul></nav><!-- /#menu -->
+
+<section id="content" class="body">
+    <header>
+        <h2 class="entry-title">
+            <a class="article-title" href="https://hunt3ri.github.io/running-mongo-32-in-docker-on-osx.html" rel="bookmark"
+               title="Permalink to Running Mongo 3.2 in Docker on OSX">Running Mongo 3.2 in Docker on OSX</a></h2>
+        
+    </header>
+    <footer class="post-info">
+        <time class="published" datetime="2016-01-12T21:22:00+00:00">
+            Tue 12 January 2016
+        </time>
+        <div>
+            Category: <a href="https://hunt3ri.github.io/category/software-development.html">Software Development</a>
+        </div>
+        <address class="vcard author">
+            By             <a class="url fn" href="https://hunt3ri.github.io/author/iain-hunter.html">Iain Hunter</a>
+        </address>
+
+    </footer><!-- /.post-info -->
+    <div class="entry-content">
+        <p>Quick post after smashing my head off the desk for 5 hours trying to understand why I couldn’t get Mongo 3.2 running in a Docker container on my Mac.  Hopefully this post spares others the elastoplasts 🙂</p>
+<p><img alt="Address Search" src="https://hunt3ri.github.io/images/mongo.png#centre"></p>
+<h2>Pitfall #1 – Mongo cannot write data to the host OSX machine</h2>
+<p>There are three factors that cause this issue:</p>
+<ol>
+<li>A lot of mongo/docker docs tell you to mount a local volume</li>
+<li>By default <a href="https://docs.docker.com/machine/">docker-machine</a> uses the virtualbox driver to create a local VM</li>
+<li>Mongo uses <a href="https://en.wikipedia.org/wiki/Mmap">mmap</a> to turbo-charge access to files on disk</li>
+</ol>
+<p>These facts led me (by way of this <a href="https://github.com/Parallels/docker-machine-parallels/issues/28">issue</a>) to the fact that there’s been an <a href="https://www.virtualbox.org/ticket/819">ancient known issue</a> on VirtualBox that basically says docker ain’t going to be able to read/write files with mmap.</p>
+<p>So it’s pointless trying to tell mongo, via docker, to mount a local data volume, as the above bug means mongo isn’t going to be able to access it.  (careful reading of the <a href="https://hub.docker.com/_/mongo/">Docker Hub mongo docs</a> may allow you to divine this, but it’s not at all obvious)</p>
+<h2>Solution – Create a data volume in the container rather than the host.</h2>
+<p>Like always once you understand the problem, the solution is simple.  We can tell docker to create a data volume in the container rather than the host, as follows:</p>
+<div class="highlight"><pre><span></span><code>docker run –name my-local-mongo -v mongo-data:/data/db -p <span class="m">27017</span>:27017 -d mongo
+</code></pre></div>
+
+
+<p>In my (still) early days with docker I’d come across these cli commands which contained absolutely no description of WTF all the switches are doing, so a quick breakdown:</p>
+<ul>
+<li><strong>–name my-local-mongo</strong> – This tells docker to give the container the name “my-local-mongo” rather than generating a name like tuftybeaver</li>
+<li><strong>-v mongo-data:/data/db</strong> – This is the key switch, here we tell docker to create a new data volume called mongo-data and mount it as /data/db which is the default location mongo wants to write data to</li>
+<li><strong>-p 27017:27017</strong> – Here we tell docker to bind the container port 27017 to port 27017 on the host vm, allowing us to access docker locally.</li>
+<li><strong>-d</strong> – This switch tells docker to run the process detached so we’re not running interactively.</li>
+</ul>
+<p>If all has gone well docker should be running your mongo container successfully.  A quick <strong>docker ps</strong> will show your running container.</p>
+<p><strong>docker logs -f my-local-mongo</strong> – will allow you to follow the log files</p>
+<h2>Pitfall #2 – I can’t connect to mongo from localhost</h2>
+<p>This is the classic docker school boy error, that everyone makes.  The first time you do this you’ll be patting yourself on the back as you type localhost:27017 into your connection string and then wonder why the hell docker isn’t found.</p>
+<p>This is because everything is actually running on your local docker virtual machine.  To find the IP of the VM enter <strong>docker-machine ls</strong></p>
+<p>You should see the URL listed something like this tcp://192.168.99.100:2376 You need to snarf this IP for your connection string.  The easiest way to sanity check that’s it all working is bash it into your browser, eg for this example:</p>
+<p><a href="http://192.168.99.100:27017">http://192.168.99.100:27017/</a></p>
+<p>The mongo database should helpfully respond with:</p>
+<div class="highlight"><pre><span></span><code>It looks like you are trying to access MongoDB over HTTP on the native driver port.
+</code></pre></div>
+
+
+<p>Demonstrating that your mongo db is running and responding to idiots trying to speak to it over HTTP 🙂</p>
+<h2>Pitfall #3 – No collections are displayed in RoboMongo</h2>
+<p>This was a real head scratcher, I was pretty sure everything was working, and yet <a href="https://robomongo.org/">RoboMongo</a> wasn’t showing a damn thing.  This was a classic case of me Sherlock Holmes style spending 2 hours <em>eliminating the impossible, to find whatever remains, however improbable, must be the truth</em></p>
+<p>So in a turn up for the books, there was no bug in my code!!  It <a href="https://stackoverflow.com/questions/34462083/cannot-see-collections-in-robomongo-on-windows-10/34462109">turns out</a> by default Mongo 3.2 uses the WiredTiger storage engine, and RoboMongo can’t parse data stored in this format.</p>
+<p>So instead if you’re using Mongo 3.2 you should use MongoChef to connect to your db.  <a href="https://studio3t.com/">MongoChef</a> will show you all your lovely collections, living within your containerised Mongo.</p>
+<p>Hope the above helps, thanks 🙂</p>
+    </div><!-- /.entry-content -->
+</section>
+        <footer id="contentinfo" class="body">
+                <hr id="footer-line">
+                <address id="about" class="vcard body">
+                        &copy; 2021 Iain Hunter.
+                Proudly powered by <a href="https://getpelican.com/">Pelican</a>,
+                which takes great advantage of <a href="https://www.python.org/">Python 3.9</a>.
+
+                        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img id="license-img" alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a>
+
+                </address><!-- /#about -->
+        </footer><!-- /#contentinfo -->
+                <script src="https://kit.fontawesome.com/afb8de03da.js" crossorigin="anonymous"></script>
+        </div>
+</body>
+</html>

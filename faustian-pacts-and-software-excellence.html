@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <title>hunt3ri.github.io - Faustian Pacts and Software Excellence</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="generator" content="Pelican" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+        <link href="/theme/css/main.css" rel="stylesheet">
+        <link href="/theme/css/pygment.css" rel="stylesheet">
+        <link href="https://hunt3ri.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Full Atom Feed" />
+        <link href="https://hunt3ri.github.io/feeds/software-development.atom.xml" type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Categories Atom Feed" />
+
+
+
+
+
+</head>
+
+<body id="index" class="home">
+        <div class="container">
+        <header id="banner" class="body" style="background-image: url('/images/stirling.png')">
+                <h1 id="site-title-header"><a id="site-title" href="https://hunt3ri.github.io/">hunt3ri.github.io</a></h1>
+                <h3></h3>
+        </header><!-- /#banner -->
+                <!-- TODO -->
+                <p class="socials text-end">
+                        <a class="nav-item" href="https://stackoverflow.com/story/iain-hunter" target="_blank"><i class="fab fa-stack-overflow"></i></a>
+                        <a class="nav-item" href="https://github.com/hunt3ri" target="_blank"><i class="fab fa-github"></i></a>
+                        <a class="nav-item" href="https://www.linkedin.com/in/hunteriain/" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                        <a class="nav-item" href="https://twitter.com/hunt3ri" target="_blank"><i class="fab fa-twitter"></i></a>
+                </p>
+        <nav id="menu"><ul>
+        </ul></nav><!-- /#menu -->
+
+<section id="content" class="body">
+    <header>
+        <h2 class="entry-title">
+            <a class="article-title" href="https://hunt3ri.github.io/faustian-pacts-and-software-excellence.html" rel="bookmark"
+               title="Permalink to Faustian Pacts and Software Excellence">Faustian Pacts and Software Excellence</a></h2>
+        
+    </header>
+    <footer class="post-info">
+        <time class="published" datetime="2019-11-20T22:20:00+00:00">
+            Wed 20 November 2019
+        </time>
+        <div>
+            Category: <a href="https://hunt3ri.github.io/category/software-development.html">Software Development</a>
+        </div>
+        <address class="vcard author">
+            By             <a class="url fn" href="https://hunt3ri.github.io/author/iain-hunter.html">Iain Hunter</a>
+        </address>
+
+    </footer><!-- /.post-info -->
+    <div class="entry-content">
+        <p>I saw this tweet recently and it sparked a few thoughts as it neatly gets to the heart of the biggest challenge in software – getting to done.</p>
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">P1: Aren&#39;t you ashamed of writing code like this?<br>P2: What do you mean by &quot;this&quot;?<br>P1: Sky-high cyclomatic complexity, inconsistent naming, &amp; duplication.<br>P2: Oh, I thought you meant &quot;profitable&quot;, and the answer is no I&#39;m not ashamed.</p>&mdash; Kent Beck (@KentBeck) <a href="https://twitter.com/KentBeck/status/1190052930843336704?ref_src=twsrc%5Etfw">October 31, 2019</a></blockquote>
+
+<p><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+<p>In my experience there is very often a tension on any sizable software project between the desire of the business to get the software in front of customers as quickly as possible and the engineering team’s desire to ensure the code and architecture is of a high enough quality to make refactoring, scaling, testing and addition of new features as easy as possible.  Both desires are equally valid.</p>
+<p>The business needs to expand market share, ship code, have happy customers and get paid.  Possibly by being first to market.  Possibly because commitments and contracts have been signed promising a hard delivery date.</p>
+<p>Equally developers understand the value of flexible architecture, code that is easy to refactor, test and debug.  Further developers know that without these things code becomes harder to work with, meaning quality is hard to ensure, which leads to bugs and delays in delivery and ultimately unhappy customers.</p>
+<p>The tension comes from the assumption on both sides that the other should see their view as perfectly obvious and correct.  Both tribes are worrying about the same thing from a different view point.  Simplistically:</p>
+<ul>
+<li>The business worries that if the customer doesn’t get their software, we won’t get paid and we’ll be out of a job</li>
+<li>The dev team worries that if the software isn’t right we’ll be shipping slow buggy software, we won’t get paid and we’ll be out of a job.</li>
+</ul>
+<p>It is in the middle of these two tribes and this argument that the senior/lead developer will find themselves.  And it is here that both sides have to communicate and trust each other.</p>
+<p><img alt="Faust" src="https://hunt3ri.github.io/images/faust-1.jpg#centre"></p>
+<h2>Communication</h2>
+<p>At the start of the project we could agree (simplistically):</p>
+<p><em>We must ship this project by June 2020, otherwise we lose the contract to our competitor.  We need to make some pragmatic decisions, take on a certain amount of technical debt.  Once we deliver we won’t promise any major new features until the technical debt is resolved.</em></p>
+<h2>Trust</h2>
+<p>Regarding trust.  The business needs to trust the team that they will deliver and make the necessary pragmatic decisions.  The developers need to trust that the business will allow them the necessary space to address the technical debt.</p>
+<h2>Profit</h2>
+<p>Which takes us back to the tweet.  Code that is profitable but with an amount of tech debt is acceptable as long as each side understands the reasons and the trust exists to resolve as/if needed.</p>
+<h2>Faust</h2>
+<p>Unfortunately in many software projects the above turns into a Faustian pact for the dev team.  Reluctantly they allow the technical debt to build up trusting that time will be given to resolve it.  In the meantime the business signs more deals, or demands new features with harder deadlines and the project becomes exactly what the dev team feared - unwieldy, slow and buggy, and stress increases.</p>
+<p>Excellent teams and businesses understand this, and ensure that both deadlines are hit and code quality is high, with time allowed to address technical debt.   In the end it’s only the excellent teams that will succeed.</p>
+    </div><!-- /.entry-content -->
+</section>
+        <footer id="contentinfo" class="body">
+                <hr id="footer-line">
+                <address id="about" class="vcard body">
+                        &copy; 2021 Iain Hunter.
+                Proudly powered by <a href="https://getpelican.com/">Pelican</a>,
+                which takes great advantage of <a href="https://www.python.org/">Python 3.9</a>.
+
+                        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img id="license-img" alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a>
+
+                </address><!-- /#about -->
+        </footer><!-- /#contentinfo -->
+                <script src="https://kit.fontawesome.com/afb8de03da.js" crossorigin="anonymous"></script>
+        </div>
+</body>
+</html>

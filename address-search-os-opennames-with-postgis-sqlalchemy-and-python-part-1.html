@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <title>hunt3ri.github.io - Address Search OS OpenNames with PostGIS, SQLAlchemy and Python – PART 1</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="generator" content="Pelican" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+        <link href="/theme/css/main.css" rel="stylesheet">
+        <link href="/theme/css/pygment.css" rel="stylesheet">
+        <link href="https://hunt3ri.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Full Atom Feed" />
+        <link href="https://hunt3ri.github.io/feeds/programming.atom.xml" type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Categories Atom Feed" />
+
+
+
+
+
+</head>
+
+<body id="index" class="home">
+        <div class="container">
+        <header id="banner" class="body" style="background-image: url('/images/stirling.png')">
+                <h1 id="site-title-header"><a id="site-title" href="https://hunt3ri.github.io/">hunt3ri.github.io</a></h1>
+                <h3></h3>
+        </header><!-- /#banner -->
+                <!-- TODO -->
+                <p class="socials text-end">
+                        <a class="nav-item" href="https://stackoverflow.com/story/iain-hunter" target="_blank"><i class="fab fa-stack-overflow"></i></a>
+                        <a class="nav-item" href="https://github.com/hunt3ri" target="_blank"><i class="fab fa-github"></i></a>
+                        <a class="nav-item" href="https://www.linkedin.com/in/hunteriain/" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                        <a class="nav-item" href="https://twitter.com/hunt3ri" target="_blank"><i class="fab fa-twitter"></i></a>
+                </p>
+        <nav id="menu"><ul>
+        </ul></nav><!-- /#menu -->
+
+<section id="content" class="body">
+    <header>
+        <h2 class="entry-title">
+            <a class="article-title" href="https://hunt3ri.github.io/address-search-os-opennames-with-postgis-sqlalchemy-and-python-part-1.html" rel="bookmark"
+               title="Permalink to Address Search OS OpenNames with PostGIS, SQLAlchemy and Python – PART 1">Address Search OS OpenNames with PostGIS, SQLAlchemy and Python – PART 1</a></h2>
+        
+    </header>
+    <footer class="post-info">
+        <time class="published" datetime="2017-06-20T10:20:00+01:00">
+            Tue 20 June 2017
+        </time>
+        <div>
+            Category: <a href="https://hunt3ri.github.io/category/programming.html">Programming</a>
+        </div>
+        <address class="vcard author">
+            By             <a class="url fn" href="https://hunt3ri.github.io/author/iain-hunter.html">Iain Hunter</a>
+        </address>
+
+    </footer><!-- /.post-info -->
+    <div class="entry-content">
+        <p>In this two part post we’ll look at implementing an address search using the <a href="https://www.ordnancesurvey.co.uk/business-government/products/open-map-names">Ordnance Survey Open Names</a> dataset.  We’ll use the power of Postgres with the PostGIS extension leveraging it’s built in <a href="https://www.postgresql.org/docs/current/textsearch.html">Full Text Search</a>, and use Python and the <a href="https://www.sqlalchemy.org/">SQLAlchemy</a> ORM to create a simple CLI.</p>
+<p><img alt="Address Search" src="https://hunt3ri.github.io/images/address-search.jpg#centre"></p>
+<h2>Part 1 – Data Load and DB Config Address Data</h2>
+<p>The UK is very badly served for free address data.  The best we have is the Ordnance Survey OpenNames dataset.  It will work as a Postcode lookup or a street finder (at a push), but the dataset would require a lot of additional processing to be a useful address search.  OS really want you to purchase <a href="https://www.ordnancesurvey.co.uk/business-government/products/addressbase">AddressBase</a></p>
+<p>That said, OpenNames will suffice for this example and it should be easy to extend the example to a fuller dataset if you’re lucky enough to have one.</p>
+<h2>Loading Data to PostGIS</h2>
+<p>You can download OpenNames as either CSV, or GML.  I’d recommend GML as it’s simpler to load it into PostGIS using <a href="https://gdal.org/programs/ogr2ogr.html">OGR2OGR</a>.</p>
+<p>Once you unzip the archive you’ll see that the files are referenced according to the British National Grid, so you can load as much or as little as you want.</p>
+<p>We’ll load NS68 which contains addresses in my home town of Stirling, as follows (swap out the values for your db):</p>
+<div class="highlight"><pre><span></span><code>ogr2ogr -f PostgreSQL PG:<span class="s2">&quot;host=localhost dbname=Real-World port=5432 user=iain password=password&quot;</span> NS68.gml -progress -nln open_names --config PG_USE_COPY YES
+</code></pre></div>
+
+
+<p>You should now have a new table called open_names containing the addressing info.</p>
+<p>Note if you want to load more gml files just use the <strong>-append</strong> flag:</p>
+<div class="highlight"><pre><span></span><code>ogr2ogr -f PostgreSQL PG:<span class="s2">&quot;host=localhost dbname=Real-World port=5432 user=iain password=password&quot;</span> NS88.gml -append -progress -nln open_names --config PG_USE_COPY YES
+</code></pre></div>
+
+
+<h2>Setting up Full Text Search</h2>
+<p>We now have our open_names table, but no text search column.  So we can add a textsearchable column which must be of type <a href="https://www.postgresql.org/docs/current/datatype-textsearch.html">TSVECTOR</a> as follows:</p>
+<div class="highlight"><pre><span></span><code><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">open_names</span> <span class="k">ADD</span> <span class="k">COLUMN</span> <span class="n">textsearchable</span> <span class="nb">TSVECTOR</span><span class="p">;</span>
+</code></pre></div>
+
+
+<p>We can populate the column by using the built in function <a href="https://www.postgresql.org/docs/current/textsearch-controls.html">TO_TSVECTOR</a>, this tokenises the words based on the supplied config, in our case english.  However, <a href="https://www.postgresql.org/docs/current/textsearch-configuration.html">multiple configs are supported</a>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">UPDATE</span> <span class="n">open_names</span> <span class="k">SET</span> <span class="n">textsearchable</span> <span class="o">=</span> <span class="n">TO_TSVECTOR</span><span class="p">(</span><span class="s1">&#39;english&#39;</span><span class="p">,</span> <span class="nb">text</span> <span class="o">||</span> <span class="s1">&#39; &#39;</span> <span class="o">||</span> <span class="n">localid</span><span class="p">);</span>
+</code></pre></div>
+
+
+<p>If you look at the data in your new column you’ll see that it now contains text tokens representing the address data.</p>
+<h2>Increase accuracy by concatenating multiple columns</h2>
+<p>Note that we’re concatenating 2 columns together in this update statement – <strong>text</strong> and <strong>localid</strong>.  In our case the reason for doing this is that the postcode in the <strong>localid</strong> column is stored without a space, meaning our search will return a result if the user enters a postcode without a space.</p>
+<p>However, it should be clear if we had better address data, we could concat multiple columns.  Meaning if a user searched for “1 Main St, Stirling, FK3 4GG” we would be able to return an accurate match.</p>
+<h2>Add an Index for faster searching</h2>
+<p>Now that we have data set up we can add an index to our new column which will ensure searches are fast:</p>
+<div class="highlight"><pre><span></span><code><span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">textsearch_idx</span> <span class="k">ON</span> <span class="n">open_names</span> <span class="k">USING</span> <span class="n">GIN</span> <span class="p">(</span><span class="n">textsearchable</span><span class="p">);</span>
+</code></pre></div>
+
+
+<h2>Let’s do some searches</h2>
+<p>Now lets query our new column to see if we can find some matches using the <a href="https://www.postgresql.org/docs/current/textsearch-controls.html">TO_TSQUERY</a> function</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span> <span class="n">COUNT</span><span class="p">(</span><span class="mf">1</span><span class="p">)</span> 
+<span class="k">FROM</span>   <span class="n">open_names</span> 
+<span class="k">WHERE</span> <span class="n">textsearchable</span> <span class="o">@@</span> <span class="n">TO_TSQUERY</span><span class="p">(</span><span class="s1">&#39;english&#39;</span><span class="p">,</span> <span class="s1">&#39;avenue&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+
+<p>Here we find we have 41 streets in Stirling area containing the word avenue.  You’ll note that I don’t need to worry about lowercase, uppercase or where the word might appear in the string.  Full text search takes care of that for me 🙂</p>
+<p>The @@ operator basically means that the query matches the tsvector column.</p>
+<h2>Using AND and OR for better matches</h2>
+<p>A very powerful feature of Postgres’ Full Text Search is the ability to find matches contain all or some of the words in the query using the AND &amp; operator or the OR | operator, as these examples show:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">open_names</span>
+<span class="k">where</span> <span class="n">textsearchable</span> <span class="o">@@</span> <span class="n">to_tsquery</span><span class="p">(</span><span class="s1">&#39;english&#39;</span><span class="p">,</span> <span class="s1">&#39;forth &amp; view&#39;</span><span class="p">);</span>
+</code></pre></div>
+
+
+<p>Here we only return one result Forth View which contains both Forth and View, if we change this to an OR search:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">open_names</span>
+<span class="k">where</span> <span class="n">textsearchable</span> <span class="o">@@</span> <span class="n">to_tsquery</span><span class="p">(</span><span class="s1">&#39;english&#39;</span><span class="p">,</span> <span class="s1">&#39;forth | view&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+
+<p>We get 7 results including Forth View, Bruce View, Forth Place.</p>
+<p>Again it should be easy to see how powerful text searches could be built for complex text documents.</p>
+<h2>A final note on Triggers</h2>
+<p>While our address data is fairly static, if you had a table where users were regularly editing address data, or any other columns you wanted to run a full text search on, you should consider adding a trigger to keep the TSVECTOR column up to date, <a href="https://www.postgresql.org/docs/9.5/textsearch-features.html#TEXTSEARCH-UPDATE-TRIGGERS">as outlined here</a>.</p>
+<h2>Up Next</h2>
+<p>Hopefully Part 1 has demonstrated how it is very easy to set up powerful text searching in Postgres.  In Part 2 we’ll look at how we can use Python and SQLAlchemy to allow you to integrate this functionality into your apps and APIs.</p>
+<p>So for our example the trigger would look like:</p>
+    </div><!-- /.entry-content -->
+</section>
+        <footer id="contentinfo" class="body">
+                <hr id="footer-line">
+                <address id="about" class="vcard body">
+                        &copy; 2021 Iain Hunter.
+                Proudly powered by <a href="https://getpelican.com/">Pelican</a>,
+                which takes great advantage of <a href="https://www.python.org/">Python 3.9</a>.
+
+                        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img id="license-img" alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a>
+
+                </address><!-- /#about -->
+        </footer><!-- /#contentinfo -->
+                <script src="https://kit.fontawesome.com/afb8de03da.js" crossorigin="anonymous"></script>
+        </div>
+</body>
+</html>

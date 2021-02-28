@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <title>hunt3ri.github.io - Restoring a Postgres database to AWS RDS using Docker</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="generator" content="Pelican" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+        <link href="/theme/css/main.css" rel="stylesheet">
+        <link href="/theme/css/pygment.css" rel="stylesheet">
+        <link href="https://hunt3ri.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Full Atom Feed" />
+        <link href="https://hunt3ri.github.io/feeds/software-development.atom.xml" type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Categories Atom Feed" />
+
+
+
+
+
+</head>
+
+<body id="index" class="home">
+        <div class="container">
+        <header id="banner" class="body" style="background-image: url('/images/stirling.png')">
+                <h1 id="site-title-header"><a id="site-title" href="https://hunt3ri.github.io/">hunt3ri.github.io</a></h1>
+                <h3></h3>
+        </header><!-- /#banner -->
+                <!-- TODO -->
+                <p class="socials text-end">
+                        <a class="nav-item" href="https://stackoverflow.com/story/iain-hunter" target="_blank"><i class="fab fa-stack-overflow"></i></a>
+                        <a class="nav-item" href="https://github.com/hunt3ri" target="_blank"><i class="fab fa-github"></i></a>
+                        <a class="nav-item" href="https://www.linkedin.com/in/hunteriain/" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                        <a class="nav-item" href="https://twitter.com/hunt3ri" target="_blank"><i class="fab fa-twitter"></i></a>
+                </p>
+        <nav id="menu"><ul>
+        </ul></nav><!-- /#menu -->
+
+<section id="content" class="body">
+    <header>
+        <h2 class="entry-title">
+            <a class="article-title" href="https://hunt3ri.github.io/restoring-a-postgres-database-to-aws-rds-using-docker.html" rel="bookmark"
+               title="Permalink to Restoring a Postgres database to AWS RDS using Docker">Restoring a Postgres database to AWS RDS using Docker</a></h2>
+        
+    </header>
+    <footer class="post-info">
+        <time class="published" datetime="2017-05-23T21:22:00+01:00">
+            Tue 23 May 2017
+        </time>
+        <div>
+            Category: <a href="https://hunt3ri.github.io/category/software-development.html">Software Development</a>
+        </div>
+        <address class="vcard author">
+            By             <a class="url fn" href="https://hunt3ri.github.io/author/iain-hunter.html">Iain Hunter</a>
+        </address>
+
+    </footer><!-- /.post-info -->
+    <div class="entry-content">
+        <p>In this post I look at using Docker to restore a Postgres dump file to a Postgres database running in the cloud on <a href="https://aws.amazon.com/rds/">AWS RDS</a>.</p>
+<h2>Keep it clean</h2>
+<p>One of the big selling points of docker, for me, is that I can have lots of apps and utils running in nice containers on my dev laptop, without having to install them locally.  This ensures my laptop stays nice and responsive and I don’t clutter/break my laptop with lots of weird dependencies and running processes that I’m then too scared to delete.</p>
+<p>Postgres is a good example – I don’t want to install it locally, but I do need access to the command line tools like <a href="https://www.postgresql.org/docs/current/app-psql.html">psql</a> and <a href="https://www.postgresql.org/docs/current/app-pgrestore.html">pg_restore</a>, to be able to work with my databases effectively.</p>
+<p>One way of accessing these tools would be to ssh onto the AWS cloud instances, but there’s a bunch of reasons most pertinently security (not to mention the faff) why you’d want to avoid that every time you want to run some sql.  So let’s look at how we use Docker to ease the pain instead.</p>
+<h2>Start Me Up</h2>
+<p>With Docker installed you can build this simple Dockerfile to create a local Postgres container.  The User and Password env vars aren’t strictly required, however, if you want to actually connect to the containerised DB, it’s pretty handy</p>
+<div class="highlight"><pre><span></span><code><span class="k">FROM</span> <span class="s">postgres</span>
+
+<span class="k">ENV</span> POSTGRES_USER postgres
+<span class="k">ENV</span> POSTGRES_PASSWORD password
+</code></pre></div>
+
+
+<p>ou can build, run and connect to the container as follows (assumes you are on Mac)</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6</pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>  <span class="n">mkdir</span> <span class="n">data</span><span class="o">-</span><span class="n">load</span>
+  <span class="n">vi</span> <span class="n">Dockerfile</span>   <span class="c1"># Copy Docker commands listed above into your local Dockerfile</span>
+  <span class="n">docker</span> <span class="n">build</span> <span class="o">-</span><span class="n">t</span> <span class="n">postgres</span><span class="o">-</span><span class="n">db</span> <span class="o">.</span>
+  <span class="n">docker</span> <span class="n">run</span> <span class="o">-</span><span class="n">d</span> <span class="o">-</span><span class="n">v</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">iainhunter</span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">docker</span><span class="o">/</span><span class="n">postgres</span><span class="o">/</span><span class="n">data</span><span class="o">-</span><span class="n">load</span><span class="p">:</span><span class="o">/</span><span class="n">data</span><span class="o">-</span><span class="n">loader</span> <span class="o">-</span><span class="n">p</span> <span class="mi">5432</span><span class="p">:</span><span class="mi">5432</span> <span class="n">postgres</span><span class="o">-</span><span class="n">db</span>
+  <span class="n">docker</span> <span class="n">ps</span>
+  <span class="n">docker</span> <span class="n">exec</span> <span class="o">-</span><span class="n">it</span> <span class="o">&lt;</span><span class="n">imageId</span><span class="o">&gt;</span> <span class="n">bash</span>
+</code></pre></div>
+</td></tr></table>
+
+<p>Note line 4 where I map the data-load dir I created at line 1 to a new directory called data-loader inside my container.  This means that when I copy the Postgres dump file into my local data-load directory, it will be available to the postgres tools available in the container.</p>
+<p>Line 6  allows me to connect to the container, swap the imageId  for your locally running containerID.</p>
+<h2>Restoring your database with pg_restore</h2>
+<p>I’ll assume you already have a Postgres database set up within the AWS cloud.  So now we have connected to our container, we can use pg_restore to use restore our dumpfile into AWS (note this command will prompt you for the admin password)</p>
+<div class="highlight"><pre><span></span><code>pg_restore —host<span class="o">=</span>&lt;youHost&gt;.eu-west-1.rds.amazonaws.com –port<span class="o">=</span><span class="m">5432</span> –username<span class="o">=</span>&lt;yourAdminUser&gt; –password –dbname<span class="o">=</span>&lt;yourDB&gt;  /data-loader/dumpfile.dmp
+</code></pre></div>
+
+
+<h2>A note on schemas</h2>
+<p>If you’re doing a partial restore, you may want to restore your dumpfile to a separate schema.  Unfortunately there appears to be no way to do this from the command line.  What you have to do is to rename the public schema, create a new public schema and restore into that, then reverse the process.</p>
+<p><a href="https://stackoverflow.com/questions/4191653/i-want-to-restore-the-database-with-a-different-schema/16311908#16311908">This StackOverflow answer outlines the process.</a></p>
+<h2>Restore Complete</h2>
+<p>You should now have a complete restore of your dumpfile in the cloud.  Please add comments if anything is unclear.</p>
+    </div><!-- /.entry-content -->
+</section>
+        <footer id="contentinfo" class="body">
+                <hr id="footer-line">
+                <address id="about" class="vcard body">
+                        &copy; 2021 Iain Hunter.
+                Proudly powered by <a href="https://getpelican.com/">Pelican</a>,
+                which takes great advantage of <a href="https://www.python.org/">Python 3.9</a>.
+
+                        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img id="license-img" alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a>
+
+                </address><!-- /#about -->
+        </footer><!-- /#contentinfo -->
+                <script src="https://kit.fontawesome.com/afb8de03da.js" crossorigin="anonymous"></script>
+        </div>
+</body>
+</html>

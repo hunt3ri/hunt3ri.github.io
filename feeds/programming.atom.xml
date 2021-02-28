@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>hunt3ri.github.io - Programming</title><link href="https://hunt3ri.github.io/" rel="alternate"></link><link href="https://hunt3ri.github.io/feeds/programming.atom.xml" rel="self"></link><id>https://hunt3ri.github.io/</id><updated>2017-06-27T22:20:00+01:00</updated><entry><title>Address Search OS OpenNames with PostGIS, SQLAlchemy and Python – PART 2</title><link href="https://hunt3ri.github.io/address-search-os-opennames-with-postgis-sqlalchemy-and-python-part-2.html" rel="alternate"></link><published>2017-06-27T22:20:00+01:00</published><updated>2017-06-27T22:20:00+01:00</updated><author><name>Iain Hunter</name></author><id>tag:hunt3ri.github.io,2017-06-27:/address-search-os-opennames-with-postgis-sqlalchemy-and-python-part-2.html</id><summary type="html">&lt;p&gt;In Part 2 we look at writing a simple Python 3 CLI app that will show you how easy it is to integrate this powerful functionality into your apps and APIs.  Other than Python the only dependency we need is the SQLAlchemy ORM to let our app communicate with Postgres&lt;/p&gt;</summary><content type="html">&lt;p&gt;Part 1 of this post outlined how to configure a PostGIS database to allow us to run Full Text searches against the OS OpenNames dataset.&lt;/p&gt;
+&lt;p&gt;In Part 2 we look at writing a simple Python 3 CLI app that will show you how easy it is to integrate this powerful functionality into your apps and APIs.  Other than Python the only dependency we need is the &lt;a href="https://www.sqlalchemy.org/"&gt;SQLAlchemy ORM&lt;/a&gt; to let our app communicate with Postgres.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Address Search" src="https://hunt3ri.github.io/images/address-search.jpg#centre"&gt;&lt;/p&gt;
+&lt;h2&gt;Installing SQLAlchemy&lt;/h2&gt;
+&lt;p&gt;SQLAlchemy can be installed using pip.  It is dependent on psycopg2, which you may struggle to install on Mac without Postgres present, which is frustrating (however solutions can be found on Stack Overflow)&lt;/p&gt;
+&lt;h2&gt;A simple address search CLI&lt;/h2&gt;
+&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt; 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;  &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;argparse&lt;/span&gt;
+  &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;sqlalchemy&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;create_engine&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Column&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Integer&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;String&lt;/span&gt;
+  &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;sqlalchemy.ext.declarative&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;declarative_base&lt;/span&gt;
+  &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;sqlalchemy.dialects.postgresql&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;TSVECTOR&lt;/span&gt;
+  &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;sqlalchemy.orm&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;sessionmaker&lt;/span&gt;
+
+  &lt;span class="c1"&gt;# Create DB Session&lt;/span&gt;
+  &lt;span class="n"&gt;engine&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;create_engine&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;postgresql://iain:password@localhost:5432/Real-World&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="n"&gt;Session&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;sessionmaker&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;bind&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;engine&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="n"&gt;session&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Session&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+  &lt;span class="n"&gt;Base&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;declarative_base&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+  &lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;OpenNames&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Base&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+      &lt;span class="n"&gt;__tablename__&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;open_names&amp;#39;&lt;/span&gt;
+
+      &lt;span class="c1"&gt;# Map DB columns we&amp;#39;re interested in &lt;/span&gt;
+      &lt;span class="n"&gt;ogc_fid&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Column&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Integer&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;primary_key&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="kc"&gt;True&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Column&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;String&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;textsearchable&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Column&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;TSVECTOR&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+      &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;search_address&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;search_for&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+          &lt;span class="nb"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;search_for&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+          &lt;span class="n"&gt;or_search&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;search_for&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;replace&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39; &amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39; | &amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;  &lt;span class="c1"&gt;# Append OR operator to every word searched&lt;/span&gt;
+          &lt;span class="n"&gt;results&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;session&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;query&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;OpenNames&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;OpenNames&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;textsearchable&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;match&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;or_search&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;postgresql_reconfig&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;english&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+
+          &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;result&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;results&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+              &lt;span class="nb"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+  &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="vm"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;__main__&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+      &lt;span class="n"&gt;parser&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;argparse&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ArgumentParser&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+      &lt;span class="n"&gt;parser&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;add_argument&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;address&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;help&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;Address you want to search for&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;args&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;parser&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;parse_args&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+      &lt;span class="n"&gt;open_names&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;OpenNames&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+      &lt;span class="n"&gt;open_names&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;search_address&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;address&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+
+&lt;h2&gt;Let me draw your attention to…&lt;/h2&gt;
+&lt;p&gt;Hopefully this script is fairly easy to follow, but there are a couple of lines to draw your attention to&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Line 4&lt;/strong&gt; – Note we have to tell SQLAlchemy we’re using the Postgres dialect so it understands TSVECTOR&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Lines 8&lt;/strong&gt; – 12 is simply SQLAlchemy boiler plate that sets up our connection and session for the app.  You’ll need to swap out the connection details for your own&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Lines 17-20&lt;/strong&gt; I’ve chosen to map only 3 columns, you’ll probably want to map more.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Line 25&lt;/strong&gt; – is very important, here we append the OR operator to every word the user has supplied, meaning we’re returning addresses.  You could extend this to allow the user to specify on exact match operator and change this to an &amp;amp; search.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Line 26&lt;/strong&gt; – Finally note we ask SQLAlchemy to match our search, and importantly we must supply the &lt;strong&gt;postgresql_reconfig&lt;/strong&gt; param to say we’re searching in English.  This is vital or you wont get the matches you expect.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Running our app&lt;/h2&gt;
+&lt;p&gt;We can run our app from the command line simply by entering the following command&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="n"&gt;python&lt;/span&gt; &lt;span class="n"&gt;address_search&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;py&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;forth street&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Ends&lt;/h2&gt;
+&lt;p&gt;Hopefully you can see how easy it would be take the above code and integrate it into your apps and APIs.  I hope you’ve found these tutorials useful.  Happy text searching.&lt;/p&gt;</content><category term="Programming"></category></entry><entry><title>Address Search OS OpenNames with PostGIS, SQLAlchemy and Python – PART 1</title><link href="https://hunt3ri.github.io/address-search-os-opennames-with-postgis-sqlalchemy-and-python-part-1.html" rel="alternate"></link><published>2017-06-20T10:20:00+01:00</published><updated>2017-06-20T10:20:00+01:00</updated><author><name>Iain Hunter</name></author><id>tag:hunt3ri.github.io,2017-06-20:/address-search-os-opennames-with-postgis-sqlalchemy-and-python-part-1.html</id><summary type="html">&lt;p&gt;In this two part post we’ll look at implementing an address search using the Ordnance Survey Open Names dataset.  We’ll use the power of Postgres with the PostGIS extension leveraging it’s built in Full Text Search, and use Python and the SQLAlchemy ORM to create a simple CLI.&lt;/p&gt;</summary><content type="html">&lt;p&gt;In this two part post we’ll look at implementing an address search using the &lt;a href="https://www.ordnancesurvey.co.uk/business-government/products/open-map-names"&gt;Ordnance Survey Open Names&lt;/a&gt; dataset.  We’ll use the power of Postgres with the PostGIS extension leveraging it’s built in &lt;a href="https://www.postgresql.org/docs/current/textsearch.html"&gt;Full Text Search&lt;/a&gt;, and use Python and the &lt;a href="https://www.sqlalchemy.org/"&gt;SQLAlchemy&lt;/a&gt; ORM to create a simple CLI.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Address Search" src="https://hunt3ri.github.io/images/address-search.jpg#centre"&gt;&lt;/p&gt;
+&lt;h2&gt;Part 1 – Data Load and DB Config Address Data&lt;/h2&gt;
+&lt;p&gt;The UK is very badly served for free address data.  The best we have is the Ordnance Survey OpenNames dataset.  It will work as a Postcode lookup or a street finder (at a push), but the dataset would require a lot of additional processing to be a useful address search.  OS really want you to purchase &lt;a href="https://www.ordnancesurvey.co.uk/business-government/products/addressbase"&gt;AddressBase&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;That said, OpenNames will suffice for this example and it should be easy to extend the example to a fuller dataset if you’re lucky enough to have one.&lt;/p&gt;
+&lt;h2&gt;Loading Data to PostGIS&lt;/h2&gt;
+&lt;p&gt;You can download OpenNames as either CSV, or GML.  I’d recommend GML as it’s simpler to load it into PostGIS using &lt;a href="https://gdal.org/programs/ogr2ogr.html"&gt;OGR2OGR&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Once you unzip the archive you’ll see that the files are referenced according to the British National Grid, so you can load as much or as little as you want.&lt;/p&gt;
+&lt;p&gt;We’ll load NS68 which contains addresses in my home town of Stirling, as follows (swap out the values for your db):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;ogr2ogr -f PostgreSQL PG:&lt;span class="s2"&gt;&amp;quot;host=localhost dbname=Real-World port=5432 user=iain password=password&amp;quot;&lt;/span&gt; NS68.gml -progress -nln open_names --config PG_USE_COPY YES
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You should now have a new table called open_names containing the addressing info.&lt;/p&gt;
+&lt;p&gt;Note if you want to load more gml files just use the &lt;strong&gt;-append&lt;/strong&gt; flag:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;ogr2ogr -f PostgreSQL PG:&lt;span class="s2"&gt;&amp;quot;host=localhost dbname=Real-World port=5432 user=iain password=password&amp;quot;&lt;/span&gt; NS88.gml -append -progress -nln open_names --config PG_USE_COPY YES
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Setting up Full Text Search&lt;/h2&gt;
+&lt;p&gt;We now have our open_names table, but no text search column.  So we can add a textsearchable column which must be of type &lt;a href="https://www.postgresql.org/docs/current/datatype-textsearch.html"&gt;TSVECTOR&lt;/a&gt; as follows:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="k"&gt;ALTER&lt;/span&gt; &lt;span class="k"&gt;TABLE&lt;/span&gt; &lt;span class="n"&gt;open_names&lt;/span&gt; &lt;span class="k"&gt;ADD&lt;/span&gt; &lt;span class="k"&gt;COLUMN&lt;/span&gt; &lt;span class="n"&gt;textsearchable&lt;/span&gt; &lt;span class="nb"&gt;TSVECTOR&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;We can populate the column by using the built in function &lt;a href="https://www.postgresql.org/docs/current/textsearch-controls.html"&gt;TO_TSVECTOR&lt;/a&gt;, this tokenises the words based on the supplied config, in our case english.  However, &lt;a href="https://www.postgresql.org/docs/current/textsearch-configuration.html"&gt;multiple configs are supported&lt;/a&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="k"&gt;UPDATE&lt;/span&gt; &lt;span class="n"&gt;open_names&lt;/span&gt; &lt;span class="k"&gt;SET&lt;/span&gt; &lt;span class="n"&gt;textsearchable&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;TO_TSVECTOR&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;english&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nb"&gt;text&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39; &amp;#39;&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="n"&gt;localid&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;If you look at the data in your new column you’ll see that it now contains text tokens representing the address data.&lt;/p&gt;
+&lt;h2&gt;Increase accuracy by concatenating multiple columns&lt;/h2&gt;
+&lt;p&gt;Note that we’re concatenating 2 columns together in this update statement – &lt;strong&gt;text&lt;/strong&gt; and &lt;strong&gt;localid&lt;/strong&gt;.  In our case the reason for doing this is that the postcode in the &lt;strong&gt;localid&lt;/strong&gt; column is stored without a space, meaning our search will return a result if the user enters a postcode without a space.&lt;/p&gt;
+&lt;p&gt;However, it should be clear if we had better address data, we could concat multiple columns.  Meaning if a user searched for “1 Main St, Stirling, FK3 4GG” we would be able to return an accurate match.&lt;/p&gt;
+&lt;h2&gt;Add an Index for faster searching&lt;/h2&gt;
+&lt;p&gt;Now that we have data set up we can add an index to our new column which will ensure searches are fast:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="k"&gt;CREATE&lt;/span&gt; &lt;span class="k"&gt;INDEX&lt;/span&gt; &lt;span class="n"&gt;textsearch_idx&lt;/span&gt; &lt;span class="k"&gt;ON&lt;/span&gt; &lt;span class="n"&gt;open_names&lt;/span&gt; &lt;span class="k"&gt;USING&lt;/span&gt; &lt;span class="n"&gt;GIN&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;textsearchable&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Let’s do some searches&lt;/h2&gt;
+&lt;p&gt;Now lets query our new column to see if we can find some matches using the &lt;a href="https://www.postgresql.org/docs/current/textsearch-controls.html"&gt;TO_TSQUERY&lt;/a&gt; function&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="k"&gt;SELECT&lt;/span&gt; &lt;span class="n"&gt;COUNT&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; 
+&lt;span class="k"&gt;FROM&lt;/span&gt;   &lt;span class="n"&gt;open_names&lt;/span&gt; 
+&lt;span class="k"&gt;WHERE&lt;/span&gt; &lt;span class="n"&gt;textsearchable&lt;/span&gt; &lt;span class="o"&gt;@@&lt;/span&gt; &lt;span class="n"&gt;TO_TSQUERY&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;english&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;avenue&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here we find we have 41 streets in Stirling area containing the word avenue.  You’ll note that I don’t need to worry about lowercase, uppercase or where the word might appear in the string.  Full text search takes care of that for me 🙂&lt;/p&gt;
+&lt;p&gt;The @@ operator basically means that the query matches the tsvector column.&lt;/p&gt;
+&lt;h2&gt;Using AND and OR for better matches&lt;/h2&gt;
+&lt;p&gt;A very powerful feature of Postgres’ Full Text Search is the ability to find matches contain all or some of the words in the query using the AND &amp;amp; operator or the OR | operator, as these examples show:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="k"&gt;select&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="k"&gt;from&lt;/span&gt; &lt;span class="n"&gt;open_names&lt;/span&gt;
+&lt;span class="k"&gt;where&lt;/span&gt; &lt;span class="n"&gt;textsearchable&lt;/span&gt; &lt;span class="o"&gt;@@&lt;/span&gt; &lt;span class="n"&gt;to_tsquery&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;english&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;forth &amp;amp; view&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here we only return one result Forth View which contains both Forth and View, if we change this to an OR search:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="k"&gt;select&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="k"&gt;from&lt;/span&gt; &lt;span class="n"&gt;open_names&lt;/span&gt;
+&lt;span class="k"&gt;where&lt;/span&gt; &lt;span class="n"&gt;textsearchable&lt;/span&gt; &lt;span class="o"&gt;@@&lt;/span&gt; &lt;span class="n"&gt;to_tsquery&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;english&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;forth | view&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;We get 7 results including Forth View, Bruce View, Forth Place.&lt;/p&gt;
+&lt;p&gt;Again it should be easy to see how powerful text searches could be built for complex text documents.&lt;/p&gt;
+&lt;h2&gt;A final note on Triggers&lt;/h2&gt;
+&lt;p&gt;While our address data is fairly static, if you had a table where users were regularly editing address data, or any other columns you wanted to run a full text search on, you should consider adding a trigger to keep the TSVECTOR column up to date, &lt;a href="https://www.postgresql.org/docs/9.5/textsearch-features.html#TEXTSEARCH-UPDATE-TRIGGERS"&gt;as outlined here&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Up Next&lt;/h2&gt;
+&lt;p&gt;Hopefully Part 1 has demonstrated how it is very easy to set up powerful text searching in Postgres.  In Part 2 we’ll look at how we can use Python and SQLAlchemy to allow you to integrate this functionality into your apps and APIs.&lt;/p&gt;
+&lt;p&gt;So for our example the trigger would look like:&lt;/p&gt;</content><category term="Programming"></category></entry></feed>
