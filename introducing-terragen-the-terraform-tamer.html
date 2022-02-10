@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-159526247-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+        gtag('config', 'UA-159526247-1');
+    </script>
+
+    <title>hunt3ri.github.io - Introducing Terragen – The Terraform Tamer</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Pelican"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+    <link href="/theme/css/main.css" rel="stylesheet">
+    <link href="/theme/css/pygment.css" rel="stylesheet">
+    <link href="https://hunt3ri.github.io/feeds/all.atom.xml"
+          type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Full Atom Feed"/>
+    <link href="https://hunt3ri.github.io/feeds/devops.atom.xml"
+          type="application/atom+xml" rel="alternate" title="hunt3ri.github.io Categories Atom Feed"/>
+
+
+
+
+
+</head>
+
+<body id="index" class="home">
+<div class="container">
+    <header id="banner" class="body" style="background-image: url('/images/stirling.png')">
+        <h1 id="site-title-header"><a id="site-title" href="https://hunt3ri.github.io/">hunt3ri.github.io</a></h1>
+        <h3></h3>
+    </header><!-- /#banner -->
+    <!-- TODO -->
+    <p class="socials text-end">
+        <a class="nav-item" href="https://stackoverflow.com/story/iain-hunter" target="_blank"><i
+                class="fab fa-stack-overflow"></i></a>
+        <a class="nav-item" href="https://github.com/hunt3ri" target="_blank"><i class="fab fa-github"></i></a>
+        <a class="nav-item" href="https://www.linkedin.com/in/hunteriain/" target="_blank"><i
+                class="fab fa-linkedin-in"></i></a>
+        <a class="nav-item" href="https://twitter.com/hunt3ri" target="_blank"><i class="fab fa-twitter"></i></a>
+    </p>
+    <nav id="menu">
+        <ul>
+        </ul>
+    </nav><!-- /#menu -->
+
+<section id="content" class="body">
+    <header>
+        <h2 class="entry-title">
+            <a class="article-title" href="https://hunt3ri.github.io/introducing-terragen-the-terraform-tamer.html" rel="bookmark"
+               title="Permalink to Introducing Terragen – The Terraform Tamer">Introducing Terragen – The Terraform Tamer</a></h2>
+        
+    </header>
+    <footer class="post-info">
+        <time class="published" datetime="2022-02-10T22:08:00+00:00">
+            Thu 10 February 2022
+        </time>
+        <div>
+            Category: <a href="https://hunt3ri.github.io/category/devops.html">DevOps</a>
+        </div>
+        <address class="vcard author">
+            By             <a class="url fn" href="https://hunt3ri.github.io/author/iain-hunter.html">Iain Hunter</a>
+        </address>
+
+    </footer><!-- /.post-info -->
+    <div class="entry-content">
+        <p>I’ve been working with Terraform off and on for around 4 years now.  Generally I love it, it’s a powerful tool for managing your cloud based infrastructure and the HCL definition language makes your Infrastructure-as-Code files reasonably readable and maintainable.</p>
+<p>However, it does have its wrinkles, my personal top 5 annoyances:</p>
+<ol>
+<li>Managing infrastructure across multiple accounts, eg DEV/TEST/PROD can be painful and can lead to duplication without careful thought</li>
+<li>The management of shared infra (eg VPCs, Databases) and app level infra in the same repo can be tricky.  Eg I definitely don’t want to accidentally tear down a shared database when I’m tearing down my little hello-world app.</li>
+<li>Configuration changes between environments, eg TEST environment runs t3.small instances but prod runs m5.xlarge can be cumbersome</li>
+<li>Establishing enterprise standards, like tags that should be attached to all instances, shared Security Groups and so on can be difficult</li>
+<li>There can be a lot of boilerplate config files and so on.</li>
+</ol>
+<p>To ease the pain on the above I wrote <a href="https://github.com/hunt3ri/terragen">Terragen</a>, a pip installable python utility that provides a powerful but lightweight configuration engine ontop of your existing Terraform modules.  Let’s see it in action:</p>
+<p><img alt="Faust" src="https://hunt3ri.github.io/images/Terragen.gif#centre"></p>
+<p>With Terragen you can:</p>
+<ol>
+<li>Bring your own modules, Terragen wants to as much as possible stay out of your working modules.</li>
+<li>Establish default configs with embedded standards like tags, security groups that you can apply to all configs that “inherit” from them</li>
+<li>Control the construction/destruction of Shared infra (VPCs, Databases) from App specific infra separately if you want.</li>
+<li>Create mandatory values so your teams are alerted if they miss config that are embeeded in Company standards</li>
+<li>Powerful lookup syntax making it easy to set environment specific config, like instance types, disk space and so on.</li>
+<li>Fine grained CLI control, all config values can be overridden on the CLI meaning it works nicely with your CI tool of choice</li>
+<li>View generated Terraform files before they are applied.  Each run creates a timestamped output directory</li>
+<li>Boiler plate Terraform files like config, tfvars are automatically generated.</li>
+</ol>
+<p>Terragen uses a provider based model, while it currently only supports AWS, providers for Azure, GCP could be created by the community if the project gets some traction.</p>
+<p><a href="https://github.com/hunt3ri/terragen">Terragen is on github here</a> </p>
+<p>You can find <a href="https://github.com/hunt3ri/terragen-example-configs">example config files are available to look at here</a>.</p>
+<p>Just run <code>pip install terragen</code> to get started :)</p>
+    </div><!-- /.entry-content -->
+</section>
+    <footer id="contentinfo" class="body">
+        <hr id="footer-line">
+        <address id="about" class="vcard body">
+            &copy; 2022 Iain Hunter.
+            Proudly powered by <a href="https://getpelican.com/">Pelican</a>,
+            which takes great advantage of <a href="https://www.python.org/">Python 3.9</a>.
+
+            <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img id="license-img"
+                                                                                           alt="Creative Commons License"
+                                                                                           style="border-width:0"
+                                                                                           src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png"/></a>
+
+        </address><!-- /#about -->
+    </footer><!-- /#contentinfo -->
+    <script src="https://kit.fontawesome.com/afb8de03da.js" crossorigin="anonymous"></script>
+</div>
+</body>
+</html>
